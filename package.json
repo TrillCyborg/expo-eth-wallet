@@ -10,6 +10,7 @@
   "dependencies": {
     "@tradle/react-native-http": "^2.0.0",
     "crypto-browserify": "^3.12.0",
+    "ethers": "^4.0.27",
     "expo": "^32.0.0",
     "https-browserify": "~0.0.0",
     "node-libs-browser": "^2.2.0",
@@ -24,8 +25,11 @@
     "web3": "^1.0.0-beta.55"
   },
   "devDependencies": {
+    "@types/expo": "^32.0.0",
+    "@types/react-native": "^0.57.0",
     "babel-preset-expo": "^5.0.0",
-    "rn-nodeify": "^10.0.1"
+    "rn-nodeify": "^10.0.1",
+    "typescript": "^3.3.0"
   },
   "private": true,
   "react-native": {
