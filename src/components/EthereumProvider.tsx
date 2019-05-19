@@ -1,50 +1,74 @@
-import React from 'react'
-import { ethers } from 'ethers'
-import { loadWallet, WalletStorageType } from '../lib/ethereum/wallet'
-import { loadAssets, AssetType, Asset } from '../lib/ethereum/assets'
+import React from "react";
+import { ethers } from "ethers";
+import {
+  createWallet,
+  loadWallet,
+  sendAsset,
+  WalletStorageType
+} from "../lib/ethereum/wallet";
+import { loadAssets, AssetType, Asset } from "../lib/ethereum/assets";
 
-const ASSETS = [AssetType.eth, AssetType.dai]
+const ASSETS = [AssetType.eth, AssetType.dai];
 
 export interface Ethereum {
-  wallet: ethers.Wallet,
-  assets: Asset[],
-  send?: (args: { to: string, amount: number, type: AssetType }) => any
-  loading: boolean
+  wallet: ethers.Wallet;
+  assets: Asset[];
+  sendAsset: (to: string, amount: number, type: AssetType) => Promise<ethers.providers.TransactionResponse>;
+  createWallet: () => void;
+  loading: boolean;
 }
 
-export const EthereumContext = React.createContext({} as Ethereum)
+export const EthereumContext = React.createContext({} as Ethereum);
 
 interface EthereumProviderProps {
-  children: JSX.Element
+  children: JSX.Element;
 }
 
 class EthereumProvider extends React.Component<EthereumProviderProps> {
-  state = { loading: true } as Ethereum
-
-  private sendAsset = (type: AssetType) => async (args: { to: string, amount: number }) => {
-    const { wallet } = this.state
-    const network = await wallet.provider.getNetwork()
-    const transaction = await wallet.sendTransaction({
-      to: args.to,
-      value: ethers.utils.parseEther(args.amount.toString()),
-      chainId: network.chainId
-    });
-  }
+  state = { loading: true } as Ethereum;
 
   public componentDidMount = async () => {
-    const wallet = await loadWallet(WalletStorageType.mnemonics)
-    const assets = await loadAssets(ASSETS, wallet)
-    this.setState({ wallet, assets, loading: false })
-  }
+    try {
+      const wallet = await loadWallet(WalletStorageType.privateKey);
+      const assets = await loadAssets(ASSETS, wallet);
+      this.setState({ wallet, assets, loading: false });
+    } catch (e) {
+      console.log("ERROR", e);
+      this.setState({ loading: false });
+    }
+  };
+
+  public sendAsset = async (to: string, amount: number, type: AssetType): Promise<ethers.providers.TransactionResponse> => {
+    const transaction = await sendAsset({
+      wallet: this.state.wallet,
+      to,
+      amount,
+      type
+    });
+    console.log("transaction", transaction);
+    return transaction
+  };
+
+  public createWallet = async () => {
+    this.setState({ loading: true });
+    const wallet = await createWallet();
+    const assets = await loadAssets(ASSETS, wallet);
+    this.setState({ wallet, assets, loading: false });
+  };
 
   public render() {
-    const { children } = this.props
+    const { children } = this.props;
+    const value = {
+      ...this.state,
+      createWallet: this.createWallet,
+      sendAsset: this.sendAsset
+    };
     return (
-      <EthereumContext.Provider value={this.state}>
+      <EthereumContext.Provider value={value}>
         {children}
       </EthereumContext.Provider>
-    )
+    );
   }
 }
 
-export default EthereumProvider
+export default EthereumProvider;

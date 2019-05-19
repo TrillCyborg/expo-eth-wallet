@@ -1,27 +1,42 @@
 import * as React from "react";
-import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator } from "react-native";
 import { ethers } from "ethers";
 import { EthereumContext } from "./EthereumProvider";
-import { Asset } from '../lib/ethereum/assets'
+import { Asset, AssetType } from "../lib/ethereum/assets";
 
-class Wallet extends React.Component<{ assets: Asset[], wallet: ethers.Wallet }> {
-  state = {} as Asset
+class Wallet extends React.Component<{
+  assets: Asset[];
+  wallet: ethers.Wallet;
+  createWallet: () => void
+  sendAsset: (to: string, amount: number, type: AssetType) => Promise<ethers.providers.TransactionResponse>
+}> {
+  state = { network: '' };
+
+  public componentDidMount = async () => {
+    const network = await this.props.wallet.provider.getNetwork()
+    this.setState({ network: network.name })
+  }
 
   public render() {
-    const { assets, wallet } = this.props;
-    return (
+    const { network } = this.state
+    const { assets, wallet, createWallet, sendAsset } = this.props;
+    return !wallet ? (
+      <View style={styles.centerContainer}>
+        <TouchableOpacity onPress={createWallet}>
+          <Text>Create Wallet</Text>
+        </TouchableOpacity>
+      </View>
+    ) : (
       <View style={styles.container}>
-        {assets.map((asset) => (
+        <Text>{network}</Text>
+        {assets.map(asset => (
           <View key={asset.type} style={styles.row}>
             <Text>{asset.type}</Text>
             <Text>{wallet.address}</Text>
             <Text>Balance: {asset.balance}</Text>
-            {/* <TouchableOpacity onPress={() => send({
-              to: '0x24440C989754C4Ab1636c24d19e19aAb9D068493',
-              amount: 0.1,
-            })}>
+            <TouchableOpacity onPress={() => sendAsset('0x24440C989754C4Ab1636c24d19e19aAb9D068493', 0.1, asset.type)}>
               <Text>Send 0.1</Text>
-            </TouchableOpacity> */}
+            </TouchableOpacity>
           </View>
         ))}
       </View>
@@ -31,7 +46,15 @@ class Wallet extends React.Component<{ assets: Asset[], wallet: ethers.Wallet }>
 
 const WalletWithData = () => (
   <EthereumContext.Consumer>
-    {({ assets, wallet, loading }) => (loading ? null : <Wallet assets={assets} wallet={wallet} />)}
+    {({ assets, wallet, createWallet, sendAsset, loading }) =>
+      loading ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" />
+        </View>
+      ) : (
+        <Wallet assets={assets} wallet={wallet} createWallet={createWallet} sendAsset={sendAsset} />
+      )
+    }
   </EthereumContext.Consumer>
 );
 
@@ -42,8 +65,14 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     justifyContent: "center"
   },
+  centerContainer: {
+    flex: 1,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center"
+  },
   row: {
-    margin: 5,
+    margin: 5
   }
 });
 
