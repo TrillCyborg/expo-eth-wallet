@@ -1,9 +1,9 @@
-import { AsyncStorage } from 'react-native'
+import { SecureStore } from 'expo'
 import { ethers } from 'ethers'
 import { AssetType, sendEther, sendToken } from './assets'
 import { getNetwork } from './network'
 
-const PRIVATE_KEY_STORAGE_KEY = '@Ethereum/privatekey'
+const PRIVATE_KEY_STORAGE_KEY = 'Ethereum.privatekey'
 
 export enum WalletStorageType {
   privateKey = 'PRIVATE_KEY',
@@ -33,14 +33,14 @@ const loadWalletFromPrivateKey = async (privateKey: string): Promise<ethers.Wall
 export const createWallet = async (): Promise<ethers.Wallet> => {
   const mnemonics = generateMnemonics()
   const wallet = await loadWalletFromMnemonics(mnemonics)
-  await AsyncStorage.setItem(PRIVATE_KEY_STORAGE_KEY, JSON.stringify(wallet.privateKey))
+  await SecureStore.setItemAsync(PRIVATE_KEY_STORAGE_KEY, JSON.stringify(wallet.privateKey))
   return wallet
 }
 
 export const loadWallet = async (type: WalletStorageType, mnemonics?: string[]): Promise<ethers.Wallet> => {
   switch(type) {
     case WalletStorageType.privateKey:
-      const privateKey = await AsyncStorage.getItem(PRIVATE_KEY_STORAGE_KEY)
+      const privateKey = await SecureStore.getItemAsync(PRIVATE_KEY_STORAGE_KEY)
       if (!privateKey) throw new Error(`No private key in storage`)
       return loadWalletFromPrivateKey(JSON.parse(privateKey))
     case WalletStorageType.mnemonics:

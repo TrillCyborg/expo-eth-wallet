@@ -13,8 +13,10 @@ class Wallet extends React.Component<{
   state = { network: '' };
 
   public componentDidMount = async () => {
-    const network = await this.props.wallet.provider.getNetwork()
-    this.setState({ network: network.name })
+    if (this.props.wallet) {
+      const network = await this.props.wallet.provider.getNetwork()
+      this.setState({ network: network.name })
+    }
   }
 
   public render() {
